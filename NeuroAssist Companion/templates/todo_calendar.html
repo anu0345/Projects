@@ -1,0 +1,137 @@
+<!-- todo_calendar.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>To-Do Calendar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+        .header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #f0f0f0;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .header img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+        .header h1 {
+            margin-left: 10px;
+            font-size: 20px;
+        }
+        h2 {
+            text-align: center;
+        }
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 20px;
+        }
+        .day {
+            padding: 10px;
+            background: white;
+            border: 1px solid #ccc;
+            text-align: center;
+            cursor: pointer;
+        }
+        .day.marked {
+            background-color: #ffeeba;
+            font-weight: bold;
+        }
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        form {
+            display: none;
+            margin-top: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .sticky-note {
+            background-color: #fff8c6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+        }
+    </style>
+    <script>
+        function openForm(date) {
+            document.getElementById("eventForm").style.display = "block";
+            document.getElementById("eventDate").value = date;
+        }
+    </script>
+</head>
+<body>
+    <div class="header">
+        <img src="{{ url_for('static', filename='logodesign.png') }}" alt="logo">
+        <h1>NeuroAssist Companion</h1>
+    </div>
+    <br>
+    <br>
+    <h2>To-Do Calendar - {{ year }}/{{ "%02d"|format(month) }}</h2>
+    <div class="nav">
+        <a href="?month={{ month-1 if month > 1 else 12 }}&year={{ year if month > 1 else year-1 }}">&#8592; Previous</a>
+        <a href="?month={{ month+1 if month < 12 else 1 }}&year={{ year if month < 12 else year+1 }}">Next &#8594;</a>
+    </div>
+
+    <!-- Days of Week -->
+    <div class="calendar">
+        {% for day in ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] %}
+            <div style="font-weight:bold">{{ day }}</div>
+        {% endfor %}
+
+        {% set first_day = namespace(value=0) %}
+        {% set total_days = namespace(value=0) %}
+        {% for i in range(1, month+1) %}{% set first_day.value = loop.index0 %}{% endfor %}
+        {% set total_days.value = (monthrange(year, month)[1]) %}
+
+        {% set start_day = monthrange(year, month)[0] %}
+        {% for _ in range(start_day) %}
+            <div></div>
+        {% endfor %}
+
+        {% for d in range(1, total_days.value + 1) %}
+            {% set date_str = year|string + "-" + "%02d"|format(month) + "-" + "%02d"|format(d) %}
+            <div class="day {% if date_str in marked_dates %}marked{% endif %}" onclick="openForm('{{ date_str }}')">{{ d }}</div>
+        {% endfor %}
+    </div>
+
+    <!-- Event Form -->
+    <form method="POST" action="/add_event" id="eventForm">
+        <input type="hidden" name="date" id="eventDate">
+        <label>Description:</label><br>
+        <input type="text" name="text" required><br><br>
+        <label>Time (optional):</label><br>
+        <input type="time" name="time"><br><br>
+        <button type="submit">Add Event</button>
+    </form>
+
+    <!-- Display Events -->
+    {% for event in events %}
+        <div class="sticky-note">
+            <strong>{{ event.date }}</strong><br>
+            {{ event.text }} {% if event.time %}- <em>{{ event.time }}</em>{% endif %}
+        </div>
+    {% endfor %}
+</body>
+</html>
